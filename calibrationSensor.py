@@ -3,6 +3,7 @@ from os.path import isfile, join
 import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
+import time
 from SunSensor_Lib import setGamSettings, setSettingsMatrix, getImg10bit
 from SunSensor_Lib import lupa300_set
 from rotatorDriver import Pivot
@@ -36,7 +37,9 @@ class Device:
         self.pivotZenith: Pivot = Pivot(Axis.zenith)
         self.sunSensor: SunSensor = SunSensor()
         self.imageBuffer: list = []
-        # self.devInt: Device_interface = Device_interface()
+        self.TotNumZenSteps: int = 0
+        self.TotNumAzimSteps: int = 0
+        self.fig, self.ax = plt.subplots(subplot_kw={'projection' : 'polar'})
 
     def initialize(self) -> None:
         # if self.devInt.initRequest():
@@ -58,7 +61,7 @@ class Device:
 
     def prepareBuffer(self, numberAzimuthSteps: int, numberZenithSteps: int, fixedAngleRepetition: int) -> None:
         self.imageBuffer = np.zeros(((numberAzimuthSteps) * numberZenithSteps *
-                                     fixedAngleRepetition + 1, self.measurColNum))
+                                     fixedAngleRepetition, self.measurColNum))
 
     def getBuffer(self) -> list:
         return self.imageBuffer
@@ -71,37 +74,72 @@ class Device:
         for i in range(self.measurColNum):
             self.imageBuffer[azimMeasOrder][i] = stringBuffer[i]
 
-    def firstStageCalib(self, motionFlag: int, numberAzimuthSteps: int,
-                         initialAzimuthAngle: float, endAzimuthAngle: float, fixedAngleRepetition: int) -> None:
-        for j in range(fixedAngleRepetition):
-            for k in range(numberAzimuthSteps + 1):
-                self.pivotAzim.absoluteRotation(initialAzimuthAngle + k * (endAzimuthAngle - initialAzimuthAngle) / numberAzimuthSteps)
-                self.sunSensor.setSettings()
-                self.__fillBuffer(k + j * numberAzimuthSteps + motionFlag * numberAzimuthSteps * fixedAngleRepetition)
-            self.untangleWire()
+    def request_sensor(self) -> list:
+        self.sunSensor.setSettings()
+        self.__fillBuffer(self.TotNumAzimSteps)
+        return self.imageBuffer[self.TotNumAzimSteps][:3]
 
-    def secondStageCalib(self, motionFlag: int, initialAzimuthAngle: float, initialZenithAngle: float,
-                        endZenithAngle: float, numberZenithSteps: int) -> None:
+    def circle_azimuth(self, numberAzimuthSteps: int, initialAzimuthAngle: float, endAzimuthAngle: float) -> None:
+        for k in range(numberAzimuthSteps):
+            self.pivotAzim.absoluteRotation(initialAzimuthAngle + k * (endAzimuthAngle - initialAzimuthAngle) / numberAzimuthSteps)
+            time.sleep(1)
+            self.update_plot(self.request_sensor())
+            self.TotNumAzimSteps += 1
+        self.untangleWire()
+
+    def init_graph(self) -> None:
+        self.ax.set_rticks([250, 300, 350, 400])
+        self.ax.set_rlabel_position(-22.5)
+        self.ax.grid(True)
+        self.ax.set_title('Intensity to azimuth angle')
+
+        plt.show(block=False)
+
+    def update_plot(self, new_data: list) -> None:
+        phi_new_data: list = new_data[0]
+        rho_new_data: list = np.sqrt(pow(new_data[1], 2) + pow(new_data[2], 2))
+        self.ax.plot(phi_new_data, rho_new_data, '.')
+
+        plt.draw()
+        plt.pause(0.01)
+
+    def calibrate_azimuth(self, numberAzimuthSteps: int, initialAzimuthAngle: float, endAzimuthAngle: float, fixedAngleRepetition: int) -> list:
+        for j in range(fixedAngleRepetition):
+            self.circle_azimuth(numberAzimuthSteps, initialAzimuthAngle, endAzimuthAngle)
+
+    def circle_zenith(self, initialAzimuthAngle: float, initialZenithAngle: float, endZenithAngle: float, numberZenithSteps: int,
+                       numberAzimuthSteps: int, fixedAngleRepetition: int) -> None:
+            self.pivotZenith.absoluteRotation(initialZenithAngle + self.TotNumAzimSteps // (numberAzimuthSteps * fixedAngleRepetition) *
+                                              (endZenithAngle - initialZenithAngle) / numberZenithSteps)
+
+    def Calibrate(self, initialAzimuthAngle: float, initialZenithAngle: float, endAzimuthAngle: float,
+                    endZenithAngle: float, numberAzimuthSteps: int, numberZenithSteps: int,
+                    zenithVelocity: float, azimVelocity: float, fixedAngleRepetition: int) -> None:
+        self.pivotAzim.setVel(azimVelocity)
+        self.pivotZenith.setVel(zenithVelocity)
         self.pivotAzim.absoluteRotation(initialAzimuthAngle)
-        self.pivotZenith.absoluteRotation(initialZenithAngle + motionFlag * (endZenithAngle - initialZenithAngle) / numberZenithSteps)
+        self.init_graph()
+        while self.TotNumAzimSteps // (numberAzimuthSteps * fixedAngleRepetition) != numberZenithSteps:
+            self.calibrate_azimuth(numberAzimuthSteps, initialAzimuthAngle, endAzimuthAngle, fixedAngleRepetition)
+            self.circle_zenith(initialAzimuthAngle, initialZenithAngle, endZenithAngle, numberZenithSteps, numberAzimuthSteps, fixedAngleRepetition)
+
+    # def Calibrate(self, initialAzimuthAngle: float, initialZenithAngle: float, endAzimuthAngle: float,
+    #         endZenithAngle: float, numberAzimuthSteps: int, numberZenithSteps: int,
+    #         zenithVelocity: float, azimVelocity: float, fixedAngleRepetition: int) -> None:
+    #     self.pivotAzim.setVel(azimVelocity)
+    #     self.pivotZenith.setVel(zenithVelocity)
+    #     for p in range(numberZenithSteps):
+    #         self.firstStageCalib(p, numberAzimuthSteps, initialAzimuthAngle, endAzimuthAngle, fixedAngleRepetition)
+    #         self.secondStageCalib(p + 1, initialAzimuthAngle, initialZenithAngle, endZenithAngle, numberZenithSteps)
 
     def untangleWire(self) -> None:
-        self.pivotAzim.absoluteRotation(-360.)
+        self.pivotAzim.absoluteRotation(0)
 
 class Calibrator(Device):
     folderName: str = "IntensityTables"
 
     def __init__(self) -> None:
         super().__init__()
-
-    def Calibrate(self, initialAzimuthAngle: float, initialZenithAngle: float, endAzimuthAngle: float,
-                endZenithAngle: float, numberAzimuthSteps: int, numberZenithSteps: int,
-                zenithVelocity: float, azimVelocity: float, fixedAngleRepetition: int) -> None:
-        self.pivotAzim.setVel(azimVelocity)
-        self.pivotZenith.setVel(zenithVelocity)
-        for p in range(numberZenithSteps):
-            self.firstStageCalib(p, numberAzimuthSteps, initialAzimuthAngle, endAzimuthAngle, fixedAngleRepetition)
-            self.secondStageCalib(p + 1, initialAzimuthAngle, initialZenithAngle, endZenithAngle, numberZenithSteps)
 
     def saveToFile(self, buffer: list) -> str:
         toFile: str = datetime.now().strftime(f"{self.folderName}\\%m-%d-%Y_%H-%M-%S_Intensity.txt")

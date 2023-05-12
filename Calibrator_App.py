@@ -24,10 +24,6 @@ class MainWindow(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.set_zero_Button.clicked.connect(self.to_zero_position)
         self.calibration_Button.clicked.connect(self.main_programm)
 
-    fig, ax = plt.subplots(subplot_kw={'projection' : 'polar'})
-    phi_data: list = []
-    rho_data: list = []
-
     def connect(self) -> None:
         self.calibrator.initialize()
 
@@ -42,10 +38,16 @@ class MainWindow(QtWidgets.QMainWindow, design.Ui_MainWindow):
             varible_name: str = varible_temp_name[:slice_index]
             setattr(self, varible_name, value)
 
-        print(self.init_azim_sett, self.end_azim_sett)
-
     def to_zero_position(self) -> None:
         self.calibrator.setDevZeroPosition(self.init_zen_sett)
+
+    # def main_programm(self) -> None:
+    #     self.calibrator.prepareBuffer(self.num_azim_steps_sett, self.num_zen_steps_sett, self.fixed_angle_rep_sett)
+    #     self.calibrator.prepareCalibration(self.init_azim_sett, self.init_zen_sett)
+    #     self.calibrator.Calibrate(self.init_azim_sett, self.init_zen_sett, self.end_azim_sett,
+    #                                self.end_zen_sett, self.num_azim_steps_sett, self.num_zen_steps_sett,
+    #                                self.zen_vel_sett, self.azim_vel_sett, self.fixed_angle_rep_sett)
+    #     self.calibrator.saveToFile(self.calibrator.getBuffer())
 
     def main_programm(self) -> None:
         self.calibrator.prepareBuffer(self.num_azim_steps_sett, self.num_zen_steps_sett, self.fixed_angle_rep_sett)
@@ -54,11 +56,6 @@ class MainWindow(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                    self.end_zen_sett, self.num_azim_steps_sett, self.num_zen_steps_sett,
                                    self.zen_vel_sett, self.azim_vel_sett, self.fixed_angle_rep_sett)
         self.calibrator.saveToFile(self.calibrator.getBuffer())
-
-    def animate(self) -> None:
-        self.phi_data.append(self.calibrator.getBuffer()[self.calibrator.azimuthCol])
-        self.rho_data.append(self.calibrator.get)
-
 
     # def choose_file(self) -> None:
     #     for file in listdir('IntensityTables'):
