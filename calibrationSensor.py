@@ -27,19 +27,20 @@ class Device:
     azimuthCol: int = 0
     xSensCol: int = 1
     ySensCol: int = 2
-    azimSensCol: int = 3
+    radiusSensCol: int = 6
     zenithSensCol: int = 4
     relativeZenithCol: int = 5
-    avrgCol: int = 6
 
     def __init__(self) -> None:
         self.pivotAzim: Pivot = Pivot(Axis.azimuth)
         self.pivotZenith: Pivot = Pivot(Axis.zenith)
         self.sunSensor: SunSensor = SunSensor()
         self.imageBuffer: list = []
+        self.normalFallBuffer: list = [0.1, 2.374121398925781250e+02, 2.284291534423828125e+02,
+                                        1.396406292915344238e+00, 4.900190734863281250e+01, 2.725000122070312614e+02]
         self.TotNumZenSteps: int = 0
         self.TotNumAzimSteps: int = 0
-        self.fig, self.ax = plt.subplots(subplot_kw={'projection' : 'polar'})
+        self.fig, self.ax = plt.subplots()
 
     def initialize(self) -> None:
         # if self.devInt.initRequest():
@@ -61,18 +62,26 @@ class Device:
 
     def prepareBuffer(self, numberAzimuthSteps: int, numberZenithSteps: int, fixedAngleRepetition: int) -> None:
         self.imageBuffer = np.zeros(((numberAzimuthSteps) * numberZenithSteps *
-                                     fixedAngleRepetition, self.measurColNum))
+                                     fixedAngleRepetition, self.measurColNum + 1))
 
     def getBuffer(self) -> list:
         return self.imageBuffer
 
     def __prepareBufferString(self) -> tuple:
-        return (self.pivotAzim.getCoord(), *list(self.sunSensor.getCentreCoords()), self.pivotZenith.getCoord())
+        return (self.pivotAzim.getCoord(), *list(self.sunSensor.getCentreCoords()),
+                abs(self.pivotZenith.getCoord() - self.normalFallBuffer[self.zenithSensCol + 1]))
 
     def __fillBuffer(self, azimMeasOrder: int) -> None:
         stringBuffer: list = list(self.__prepareBufferString())
         for i in range(self.measurColNum):
-            self.imageBuffer[azimMeasOrder][i] = stringBuffer[i]
+            if i == self.xSensCol:
+                self.imageBuffer[azimMeasOrder][i] = round((abs(stringBuffer[i] - 237.96079999999998)), 4)
+            elif i == self.ySensCol:
+                self.imageBuffer[azimMeasOrder][i] = round((abs(stringBuffer[i] - 229.84697500000001)), 4)
+            else:
+                self.imageBuffer[azimMeasOrder][i] = stringBuffer[i]
+        self.imageBuffer[azimMeasOrder][self.measurColNum] = round((np.sqrt(pow(self.imageBuffer[azimMeasOrder][self.xSensCol], 2) +
+                                                                    pow(self.imageBuffer[azimMeasOrder][self.ySensCol], 2))), 4)
 
     def request_sensor(self) -> list:
         self.sunSensor.setSettings()
@@ -88,17 +97,17 @@ class Device:
         self.untangleWire()
 
     def init_graph(self) -> None:
-        self.ax.set_rticks([250, 300, 350, 400])
-        self.ax.set_rlabel_position(-22.5)
+        # self.ax.set_rticks([250, 300, 350, 400])
+        # self.ax.set_rlabel_position(-22.5)
         self.ax.grid(True)
         self.ax.set_title('Intensity to azimuth angle')
 
         plt.show(block=False)
 
     def update_plot(self, new_data: list) -> None:
-        phi_new_data: list = new_data[0]
-        rho_new_data: list = np.sqrt(pow(new_data[1], 2) + pow(new_data[2], 2))
-        self.ax.plot(phi_new_data, rho_new_data, '.')
+        x_new_data: list = new_data[self.xSensCol]
+        y_new_data: list = new_data[self.ySensCol]
+        self.ax.plot(x_new_data, y_new_data, '.')
 
         plt.draw()
         plt.pause(0.01)
@@ -142,7 +151,7 @@ class Calibrator(Device):
         super().__init__()
 
     def saveToFile(self, buffer: list) -> str:
-        toFile: str = datetime.now().strftime(f"{self.folderName}\\%m-%d-%Y_%H-%M-%S_Intensity.txt")
+        toFile: str = datetime.now().strftime(f"{self.folderName}\\%m-%d-%Y_%H-%M-%S_Intensity.csv")
         np.savetxt(toFile, buffer)
         return toFile
 
@@ -158,56 +167,70 @@ class Calibrator(Device):
         rho: list = [np.sqrt(pow(calibBuffer[i][self.xSensCol], 2) +
                                     pow(calibBuffer[i][self.ySensCol], 2))
                                     for i in range(len(calibBuffer))]
-        phi: list = [calibBuffer[i][self.azimuthCol] for i in range(len(calibBuffer))]
+        phi: list = [calibBuffer[i][self.azimuthCol] * np.pi / 180 for i in range(len(calibBuffer))]
         return (phi, rho)
 
-    def plotPolarCoord(self) -> None:
-        filePath: list = [f"{self.folderName}\\{file}" for file in listdir(self.folderName) if isfile(join(self.folderName, file))]
-        for filename in filePath:
-            fig, ax = plt.subplots(subplot_kw={'projection' : 'polar'})
-            coordBuffer: tuple = self.getPolarCoord(filename)
-            ax.scatter(*coordBuffer)
-            ax.set_rticks([250, 300, 350, 400])
-            ax.set_rlabel_position(-22.5)
-            ax.grid(True)
-            ax.set_title('Intensity to azimuth angle')
-            plt.plot(*coordBuffer, '.')
+    # def plotPolarCoord(self) -> None:
+    #     filePath: list = [f"{self.folderName}\\{file}" for file in listdir(self.folderName) if isfile(join(self.folderName, file))]
+    #     for filename in filePath:
+    #         fig, ax = plt.subplots(subplot_kw={'projection' : 'polar'})
+    #         coordBuffer: tuple = self.getPolarCoord(filename)
+    #         ax.scatter(*coordBuffer)
+    #         ax.set_rticks([250, 300, 350, 400])
+    #         ax.set_rlabel_position(-22.5)
+    #         ax.grid(True)
+    #         ax.set_title('Intensity to azimuth angle')
+    #         plt.plot(*coordBuffer, '.')
 
-            plt.show()
+    #         plt.show()
 
-    def getNormalFallCoord(self) -> list:
+    def getNormalFallCoord(self) -> None:
         self.sunSensor.setSettings()
-        normalFallList = list((self.pivotAzim.getCoord(), *self.sunSensor.getCentreCoords()))
-        np.savetxt("normalFallCoord.txt", normalFallList)
-        return normalFallList
+        self.normalFallBuffer = list((*self.sunSensor.getCentreCoords(), self.pivotZenith.getCoord()))
+        np.savetxt("normalFallCoord.txt", self.normalFallBuffer)
 
-    def getSensSysPolarCoord(self, filename: str) -> list:
-        normalFallBuff: list = self.downloadFile("normalFallCoord.txt")
-        calibBuffer: list = self.downloadFile(filename)
-        rho: list = [np.sqrt(pow(calibBuffer[i][self.xSensCol] - normalFallBuff[self.xSensCol][0], 2) +
-                        pow(calibBuffer[i][self.ySensCol] - normalFallBuff[self.ySensCol][0], 2))
-                        for i in range(len(calibBuffer))]
-        return rho
+    def plotThettaRadiusGraph(self) -> None:
+        y_arr: list = self.getBuffer()[self.relativeZenithCol]
+        x_arr: list = self.getBuffer()[self.radiusSensCol]
+        fig, ax = plt.subplots()
+        ax.grid(True)
+        ax.set_title('Thetta to radius')
+        plt.plot(x_arr, y_arr, '.')
 
-    def getSensSysAvgPolarCoord(self, filename: str, numberZenithSteps: int, numberAzimuthSteps: int, fixedAngleRepetition: int) -> list:
-        sensSysPolarCoord: list = self.getSensSysPolarCoord(filename)
-        calibBuffer: list = self.downloadFile(filename)
-        same_angle_lines_number: int = numberZenithSteps * fixedAngleRepetition
-        tempBuff: list = [sensSysPolarCoord[i * numberAzimuthSteps:(i + 1) * numberAzimuthSteps]
-                          for i in range(same_angle_lines_number)]
-        theta: list = [calibBuffer[i * numberAzimuthSteps][self.relativeZenithCol] for i in range(same_angle_lines_number)]
-        sysAvgSensTuple: list = [(theta[i], np.average(tempBuff[i])) for i in range(same_angle_lines_number)]
-        return sysAvgSensTuple
+        plt.show()
 
+    def avg_value(self) -> None:
+        buff: list = self.downloadFile('IntensityTables//05-16-2023_12-09-34_Intensity.csv')
+        x_arr: list = [buff[i][1] for i in range(8)]
+        y_arr: list = [buff[i][2] for i in range(8)]
+        print(np.average(x_arr), np.average(y_arr))
+    # def getSensSysPolarCoord(self, filename: str) -> list:
+    #     normalFallBuff: list = self.downloadFile("normalFallCoord.txt")
+    #     calibBuffer: list = self.downloadFile(filename)
+    #     rho: list = [np.sqrt(pow(calibBuffer[i][self.xSensCol] - normalFallBuff[self.xSensCol][0], 2) +
+    #                     pow(calibBuffer[i][self.ySensCol] - normalFallBuff[self.ySensCol][0], 2))
+    #                     for i in range(len(calibBuffer))]
+    #     return rho
+
+    # def getSensSysAvgPolarCoord(self, filename: str, numberZenithSteps: int, numberAzimuthSteps: int, fixedAngleRepetition: int) -> list:
+    #     sensSysPolarCoord: list = self.getSensSysPolarCoord(filename)
+    #     calibBuffer: list = self.downloadFile(filename)
+    #     same_angle_lines_number: int = numberZenithSteps * fixedAngleRepetition
+    #     tempBuff: list = [sensSysPolarCoord[i * numberAzimuthSteps:(i + 1) * numberAzimuthSteps]
+    #                       for i in range(same_angle_lines_number)]
+    #     theta: list = [calibBuffer[i * numberAzimuthSteps][self.relativeZenithCol] for i in range(same_angle_lines_number)]
+    #     sysAvgSensTuple: list = [(theta[i], np.average(tempBuff[i])) for i in range(same_angle_lines_number)]
+    #     return sysAvgSensTuple
 
 
 if __name__ == '__main__':
     calibrator: Calibrator = Calibrator()
+    calibrator.avg_value()
     # calibrator.initialize()
-    # calibrator.setDevZeroPosition()
+    # calibrator.setDevZeroPosition(272.5)
+    # calibrator.prepareCalibration(0, 272.5)
+    # calibrator.getNormalFallCoord()
     # calibrator.prepareBuffer(8, 4)
-    # calibrator.prepareCalibration(0, 60)
     # calibrator.Calibrate(0.0, 60.0, 360.0, 120.0, 8, 4)
     # calibrator.saveToFile(calibrator.getBuffer())
-    calibrator.plotPolarCoord()
     # calibrator.disable()

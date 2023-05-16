@@ -12,7 +12,7 @@ from PIL import ImageDraw
 from dataclasses import dataclass
 
 # настройки матрицы видимого диапазона
-lupa300_set: dict[str, int] = { 'addr_rec'          : 0x03,         #адрес датчика которому адресована команда
+lupa300_set = { 'addr_rec'          : 0x03,         #адрес датчика которому адресована команда
                 'addr_send'         : 0xF0,         #адрес отправителя, для получения ответа по этому адресу
                                                     #             | установка 1   | установка 2   | установка 3 |
                 'integration_time'  : 1000,           #выдержка, лин|   50          |  4            |             |
@@ -110,25 +110,24 @@ def main():
         print("#", i)
         #getFWversion(lupa300_set)
         setGamSettings(lupa300_set)
-        #getSensorTemperature(lupa300_set)
+        getSensorTemperature(lupa300_set)
         #getMagData(lupa300_set)
         #getGyroAccData(lupa300_set)
         #BroadcastTest(lupa300_set)
         # getMlxPhoto(lupa300_set)
-        setSettingsMatrix(lupa300_set)
-        print(getImg10bit(lupa300_set, cmd=0x04, v_size=480, h_size=480))
+        #setSettingsMatrix(lupa300_set)
         saveImageToFile(getImg10bit(lupa300_set, cmd=0x04, v_size=480, h_size=480), lupa300_set)
         #testSensorCenterAngles()
 
         time.sleep(1)
-        # if lupa300_set['addr_rec'] > 5:
-        #     lupa300_set['addr_rec'] = 1
-        # else:
-        #     lupa300_set['addr_rec'] += 1
-        # #lupa300_set['integration_time'] += 10
-        # #lupa300_set['vcal'] += 10
-        # #test_center_x += 1
-        # #test_center_y += 2
+        if lupa300_set['addr_rec'] > 5:
+            lupa300_set['addr_rec'] = 1
+        else:
+            lupa300_set['addr_rec'] += 1
+        #lupa300_set['integration_time'] += 10
+        #lupa300_set['vcal'] += 10
+        #test_center_x += 1
+        #test_center_y += 2
         i += 1
 
 def ScanPort(set):
@@ -325,8 +324,8 @@ def setGamSettings(set):
 
     delta = datetime.datetime.now() - prev_time
     prev_time = datetime.datetime.now()
-    #print("%.3f" % (delta.seconds + delta.microseconds / 1000000), end='\t')
-    #myArrPrint(tmp_buf)
+    print("%.3f" % (delta.seconds + delta.microseconds / 1000000), end='\t')
+    myArrPrint(tmp_buf)
     time.sleep(0.25)
 
     # настройка ДГ
@@ -337,7 +336,7 @@ def setGamSettings(set):
     # print()
     ser.write(packet)
     time.sleep(0.5)
-    #print('')
+    print('')
 
 def getMlxPhoto(set):
     h_size = 32
@@ -544,7 +543,7 @@ def getImg8bit(set, cmd = 0x02):
     photo.shape = (480, 640)
     return photo
 
-def getImg10bit(set, cmd = 0x04, h_size = 640, v_size = 480):
+def getImg10bit(set, cmd = 0x03, h_size = 640, v_size = 480):
     """
         Функция запроса 10ти битного изображения с датчика. В процессе выкачки рисует прогресс бар в консоль. Установлен
         таймаут на ожидание байтов из порта.
@@ -562,7 +561,7 @@ def getImg10bit(set, cmd = 0x04, h_size = 640, v_size = 480):
     time.sleep(0.1)
     ser.timeout = 3
     ser.flushInput()  # очистка входного буфера
-    time.sleep(1)
+
     #запрос расчета углов по картинке, реальной или синтетической
     ser.write(addCrc16([0xAA, set['addr_rec'], set['addr_send'], 0x00, 0x00, cmd, 0x08, 0x00,
                         test_center_x & 0x00FF, test_center_x >> 8,
@@ -571,7 +570,6 @@ def getImg10bit(set, cmd = 0x04, h_size = 640, v_size = 480):
                         salt_noise & 0x00FF, salt_noise >> 8, 0x00, 0x00]))
 
     rx_buf = ser.read(30)  # получаем центр и углы с ДСГ
-
     if packVerification(set, rx_buf):
         print("WARNING: Angles packet is corrupted.")
     else:
@@ -582,12 +580,11 @@ def getImg10bit(set, cmd = 0x04, h_size = 640, v_size = 480):
         y_sens = struct.unpack(   '<f', rx_buf[12:16])[0]
         zen_sens = struct.unpack( '<f', rx_buf[16:20])[0]
         azim_sens = struct.unpack('<f', rx_buf[20:24])[0]
-        #print("SS center:  \t%.2f\t%.2f\t" % (x_sens, y_sens))
-        #print("SS angles:  \t%.2f\t%.2f\t" % (zen_sens, azim_sens))
+        print("SS center:  \t%.2f\t%.2f\t" % (x_sens, y_sens))
+        print("SS angles:  \t%.2f\t%.2f\t" % (zen_sens, azim_sens))
 
     ser.timeout = 0.1
-    return(x_sens, y_sens, zen_sens, azim_sens)
-    '''
+
     print("SS photo receiving data...")
     i = 0
     j = 0
@@ -622,7 +619,6 @@ def getImg10bit(set, cmd = 0x04, h_size = 640, v_size = 480):
     photo.shape = (v_size, h_size)
     print("")
     return photo
-    '''
 
 def convertImageTo8bit(arr):
     """

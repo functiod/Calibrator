@@ -13,23 +13,18 @@ def downloadFile(filename: str) -> list:
 
 def getPolarCoord(filename: str) -> tuple:
         calibBuffer: list = downloadFile(filename)
-        rho: list = [np.sqrt(pow(calibBuffer[i][1], 2) +
-                                    pow(calibBuffer[i][2], 2))
-                                    for i in range(len(calibBuffer))]
-        phi: list = [calibBuffer[i][0] for i in range(len(calibBuffer))]
-        return (phi, rho)
-
-n_colors = 33
-color_list = list(colors._colors_full_map.values())[:n_colors]
+        x_arr: list = [calibBuffer[i][1] for i in range(len(calibBuffer))]
+        y_arr: list = [calibBuffer[i][2]  for i in range(len(calibBuffer))]
+        return (x_arr, y_arr)
 
 def plotPolarCoord() -> None:
     filePath: list = [f"IntensityTables\\{file}" for file in listdir("IntensityTables") if isfile(join("IntensityTables", file))]
     for i, filename in enumerate(filePath):
-        fig, ax = plt.subplots(subplot_kw={'projection' : 'polar'})
+        fig, ax = plt.subplots()
         coordBuffer: tuple = getPolarCoord(filename)
-        ax.scatter(*coordBuffer, s = 2,  c=color_list)
-        ax.set_rticks([250, 300, 350, 400])
-        ax.set_rlabel_position(-22.5)
+        ax.scatter(*coordBuffer, s = 10)
+        # ax.set_rticks([250, 300, 350, 400])
+        # ax.set_rlabel_position(-22.5)
         ax.grid(True)
         ax.set_title('Intensity to azimuth angle')
         plt.plot(*coordBuffer, '.')
@@ -37,4 +32,4 @@ def plotPolarCoord() -> None:
         plt.show()
 
 if __name__ == "__main__":
-    print(color_list)
+    plotPolarCoord()
