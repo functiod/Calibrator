@@ -56,6 +56,7 @@ class MainWindow(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                    self.end_zen_sett, self.num_azim_steps_sett, self.num_zen_steps_sett,
                                    self.zen_vel_sett, self.azim_vel_sett, self.fixed_angle_rep_sett)
         self.calibrator.saveToFile(self.calibrator.getBuffer())
+        self.calibrator.prepareCalibration(0, 272.5)
 
     # def choose_file(self) -> None:
     #     for file in listdir('IntensityTables'):

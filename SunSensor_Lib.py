@@ -12,7 +12,7 @@ from PIL import ImageDraw
 from dataclasses import dataclass
 
 # настройки матрицы видимого диапазона
-lupa300_set: dict[str, int] = { 'addr_rec'          : 0x03,         #адрес датчика которому адресована команда
+lupa300_set: dict[str, int] = { 'addr_rec'          : 0xFF,         #адрес датчика которому адресована команда
                 'addr_send'         : 0xF0,         #адрес отправителя, для получения ответа по этому адресу
                                                     #             | установка 1   | установка 2   | установка 3 |
                 'integration_time'  : 1000,           #выдержка, лин|   50          |  4            |             |
@@ -582,8 +582,8 @@ def getImg10bit(set, cmd = 0x04, h_size = 640, v_size = 480):
         y_sens = struct.unpack(   '<f', rx_buf[12:16])[0]
         zen_sens = struct.unpack( '<f', rx_buf[16:20])[0]
         azim_sens = struct.unpack('<f', rx_buf[20:24])[0]
-        #print("SS center:  \t%.2f\t%.2f\t" % (x_sens, y_sens))
-        #print("SS angles:  \t%.2f\t%.2f\t" % (zen_sens, azim_sens))
+        # print("SS center:  \t%.2f\t%.2f\t" % (x_sens, y_sens))
+        # print("SS angles:  \t%.2f\t%.2f\t" % (zen_sens, azim_sens))
 
     ser.timeout = 0.1
     return(x_sens, y_sens, zen_sens, azim_sens)

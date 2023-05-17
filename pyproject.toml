@@ -29,6 +29,7 @@ six = "1.16.0"
 pyqt5designer = "^5.14.1"
 pyqt5-tools = "^5.15.9.3.3"
 watchdog = "^3.0.0"
+pandas = "^2.0.1"
 
 [build-system]
 requires = ["poetry-core"]

@@ -78,7 +78,7 @@
     </property>
     <layout class="QVBoxLayout" name="settings_layout">
      <item>
-      <widget class="QDoubleSpinBox" name="init_azim_sett_Button">
+      <widget class="QDoubleSpinBox" name="init_azim_sett">
        <property name="minimum">
         <double>-360.000000000000000</double>
        </property>
@@ -88,57 +88,84 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="init_zen_sett_Button">
+      <widget class="QDoubleSpinBox" name="init_zen_sett">
        <property name="minimum">
         <double>-360.000000000000000</double>
        </property>
        <property name="maximum">
         <double>360.000000000000000</double>
        </property>
+       <property name="value">
+        <double>272.500000000000000</double>
+       </property>
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="end_azim_sett_Button">
+      <widget class="QDoubleSpinBox" name="end_azim_sett">
        <property name="minimum">
         <double>-360.000000000000000</double>
        </property>
        <property name="maximum">
         <double>360.000000000000000</double>
        </property>
+       <property name="value">
+        <double>360.000000000000000</double>
+       </property>
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="end_zen_sett_Button">
+      <widget class="QDoubleSpinBox" name="end_zen_sett">
        <property name="minimum">
         <double>-360.000000000000000</double>
        </property>
        <property name="maximum">
         <double>360.000000000000000</double>
        </property>
+       <property name="value">
+        <double>272.500000000000000</double>
+       </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="num_azim_steps_sett_Button"/>
+      <widget class="QSpinBox" name="num_azim_steps_sett">
+       <property name="value">
+        <number>8</number>
+       </property>
+      </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="num_zen_steps_sett_Button"/>
+      <widget class="QSpinBox" name="num_zen_steps_sett">
+       <property name="value">
+        <number>1</number>
+       </property>
+      </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="azim_vel_sett_Button">
+      <widget class="QDoubleSpinBox" name="azim_vel_sett">
        <property name="maximum">
         <double>100.000000000000000</double>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QDoubleSpinBox" name="zen_vel_sett_Button">
-       <property name="maximum">
-        <double>100.000000000000000</double>
+       <property name="value">
+        <double>50.000000000000000</double>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="fixed_angle_rep_Button"/>
+      <widget class="QDoubleSpinBox" name="zen_vel_sett">
+       <property name="maximum">
+        <double>100.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>50.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="fixed_angle_rep_sett">
+       <property name="value">
+        <number>1</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
