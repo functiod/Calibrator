@@ -12,7 +12,7 @@ from PIL import ImageDraw
 from dataclasses import dataclass
 
 # настройки матрицы видимого диапазона
-lupa300_set: dict[str, int] = { 'addr_rec'          : 0xFF,         #адрес датчика которому адресована команда
+lupa300_set: dict[str, int] = { 'addr_rec'          : 0x01,         #адрес датчика которому адресована команда
                 'addr_send'         : 0xF0,         #адрес отправителя, для получения ответа по этому адресу
                                                     #             | установка 1   | установка 2   | установка 3 |
                 'integration_time'  : 1000,           #выдержка, лин|   50          |  4            |             |

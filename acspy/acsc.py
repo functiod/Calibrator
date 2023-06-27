@@ -152,7 +152,7 @@ def openCommDirect():
     return hcomm
 
 
-def openCommEthernetTCP(address="10.0.0.100", port=701):
+def openCommEthernetTCP(address="10.2.1.202", port=701):
     """Address is a string. Port is an int.
     Returns communication handle."""
     hcomm = acs.acsc_OpenCommEthernetTCP(address.encode(), port)
@@ -210,7 +210,9 @@ def setKillDeceleration(hcomm, axis, dec, wait=SYNCHRONOUS):
     """Sets axis deceleration."""
     call_acsc(acs.acsc_SetKillDeceleration, hcomm, axis, double(dec), wait)
 
-
+def setServerExtLogin(IP: str, Port: int, Username: str, Password: str, Domain: str) -> int:
+    # The function defines the User Mode Driver (UMD) host IP address, and port along with passing login data.
+    call_acsc(acs.acsc_SetServerExtLogin, IP, Port, Username, Password, Domain)
 
 def setJerk(hcomm, axis, jerk, wait=SYNCHRONOUS):
     call_acsc(acs.acsc_SetJerk, hcomm, axis, double(jerk), wait)
