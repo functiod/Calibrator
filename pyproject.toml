@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "sunsensorcalibration"
+name = "optical_stand"
 version = "0.1.0"
 description = ""
 authors = ["Dennis <dn1607727@gmail.com>"]
-readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -30,6 +30,9 @@ pyqt5designer = "^5.14.1"
 pyqt5-tools = "^5.15.9.3.3"
 watchdog = "^3.0.0"
 pandas = "^2.0.1"
+openpyxl = "^3.1.2"
+scipy = {version = ">1.10.1,<2.0.0", python = ">=3.8, <3.12"}
+pep8 = "^1.7.1"
 
 [build-system]
 requires = ["poetry-core"]
