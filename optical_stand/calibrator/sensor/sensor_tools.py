@@ -7,14 +7,14 @@ import optical_stand.calibrator.sensor.sensor_settings as ss
 from optical_stand.calibrator.sensor.sensor_init import SunSensor
 
 
-class Tools():
+class Tools(SunSensor):
     "Class for low level data processing"
 
     prev_time: datetime = datetime.datetime.now()
     take_photo_cmd: int = 0x04
 
-    def __init__(self) -> None:
-        self.sensor: SunSensor = SunSensor()
+    # def __init__(self) -> None:
+    #     self.sensor: SunSensor = SunSensor()
 
     def _setGamsettings(self) -> None:
         tmp_buf: str = self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0x00, 0x00, 0x20, 0x09, 0x00,
@@ -22,12 +22,12 @@ class Tools():
                     ss.g_full_scale, ss.g_dlpf_cfg, ss.g_lp_mode_cfg,
                     ss.a_full_scale, ss.a_dec2_cfg, ss.a_dlpf_cfg, ss.m_odr,
                     0, 0])
-        self.sensor.write(tmp_buf)
+        self.write(tmp_buf)
         self.prev_time = datetime.datetime.now()
         time.sleep(0.25)
         packet: str = self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0x00, 0x00, 0x11, 0x06, 0x00, ss.emissivity,
                     ss.reflection_temp & 0xFF, ss.reflection_temp >> 8, ss.resolution, ss.ref_rate, ss.mode, 0, 0])
-        self.sensor.write(packet)
+        self.write(packet)
         time.sleep(0.5)
 
     def _settingsMatrix(self) -> None:
@@ -37,11 +37,11 @@ class Tools():
             ss.lupa300_set['res1_lenght'] = 484 - ss.lupa300_set['integration_time']
         ss.lupa300_set['ft_timer'] = ss.lupa300_set['res1_lenght'] + ss.lupa300_set['integration_time']
 
-        self.sensor.write(
+        self.write(
             self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0x00, 0x00, 0x01, 0x09, 0x00, ss.lupa300_set['res1_lenght'] & 0xFF,
                     ss.lupa300_set['res1_lenght'] >> 8, ss.lupa300_set['ft_timer'] & 0xFF, ss.lupa300_set['ft_timer'] >> 8, ss.lupa300_set['vcal'], ss.lupa300_set['vblack'],
                     ss.lupa300_set['voffset'], ss.lupa300_set['pga_setting'] & 0xFF, ss.lupa300_set['pga_setting'] >> 8, 0x00, 0x00]))
-        self.sensor.write(
+        self.write(
             self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0x00, 0x00, 0x0C, 0x01, 0x00, ss.lupa300_set['black_level'], 0, 0]))
 
     def _addCrc16(self, check_list: list[bytes]) -> str:
@@ -79,16 +79,16 @@ class Tools():
     def getImg10bit(self) -> tuple[float, float, float, float]:
         time.sleep(0.1)
         self.read_timeout = 3
-        self.sensor.flush()
+        self.flush()
         time.sleep(1)
-        self.sensor.write(self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'],
+        self.write(self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'],
                              0x00, 0x00, self.take_photo_cmd, 0x08, 0x00,
                             ss.test_center_x & 0x00FF, ss.test_center_x >> 8,
                             ss.test_center_y & 0x00FF, ss.test_center_y >> 8,
                             ss.bg_noise & 0x00FF, ss.bg_noise >> 8,
                             ss.salt_noise & 0x00FF, ss.salt_noise >> 8, 0x00, 0x00]))
 
-        rx_buf: bytes = self.sensor.read(30)
+        rx_buf: bytes = self.read(30)
 
         if self._packVerification(ss.lupa300_set, rx_buf):
             print("WARNING: Angles packet is corrupted.")

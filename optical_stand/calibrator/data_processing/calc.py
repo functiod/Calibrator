@@ -1,50 +1,56 @@
-class Calc():
-    "Class for math calculation"
-    def __init__(self) -> None:
-        pass
+import numpy as np
+import pandas as pd
+from optical_stand.calibrator.data_processing.file_processing import read_calib_from_csv
+from scipy.stats import moment
+from scipy.optimize import lsq_linear
 
-    def find_coaxial_deviation(self, initialAzimuthAngle: float, initialZenithAngle: float, endAzimuthAngle: float, endZenithAngle: float,
-                   numberAzimuthSteps: int, numberZenithSteps: int, fixedAngleRepetition: int) -> np.ndarray:
-        self.prepareCalibration(initialAzimuthAngle, initialZenithAngle)
-        npbuffer: np.ndarray = self.calibrate(initialAzimuthAngle, initialZenithAngle, endAzimuthAngle, endZenithAngle,
-                        numberAzimuthSteps, numberZenithSteps, fixedAngleRepetition)
-        deviation_buff: np.ndarray = np.array([self.__find_matrix_dispersion(npbuffer, self.radiusSensCol,
-                                                x*numberAzimuthSteps, (x+1)*numberAzimuthSteps) for x in range(numberZenithSteps + 1)])
-        temp_list: list = [0] * (numberAzimuthSteps - 1) * (numberZenithSteps + 1) * fixedAngleRepetition
-        for i, value in enumerate(deviation_buff):
-            temp_list.insert((i+1) * numberAzimuthSteps - 1, value)
-        result_list: np.ndarray = np.array([npbuffer[:, self.zenRotatorCol], temp_list[:]])
-        self.TotNumAzimSteps = 0
-        self.TotNumZenSteps = 0
-        return result_list
+dispersion_moment: int = 2
+order_of_polynom: int = 6
 
-    def __find_matrix_dispersion(self, buffer: list, col: int, start: int, end: int) -> float:
-        column: list = [row[col] for row in buffer]
-        column_slice: list = column[start:end]
-        return moment(column_slice, self.dispersion)
+def find_matrix_dispersion(df: pd.DataFrame) -> pd.DataFrame:
+    my_df: pd.DataFrame = df
+    zenith_df: pd.Series = my_df.loc[:, ['zenith angle']].drop_duplicates(ignore_index=True)
+    radius_col: pd.DataFrame = my_df.loc[:, ['radius sens']]
+    amount_unique_cells: int = len(zenith_df)
+    number_azim_steps: int = len(radius_col) // amount_unique_cells
+    dispersion_list: list = []
+    dispersion: float = 0.0
+    for i in range(amount_unique_cells):
+        dispersion: float = round(float(moment(radius_col[i*number_azim_steps:(i+1)*number_azim_steps], dispersion_moment)), 3)
+        dispersion_list.append(dispersion)
+    dispersion_df: pd.DataFrame = pd.DataFrame({'radius dispersion' : dispersion_list})
+    dispersion_df = zenith_df.join(dispersion_df)
+    result_df: pd.DataFrame = my_df.merge(dispersion_df, left_on='zenith angle', right_on='zenith angle')
+    return result_df
 
-    def find_least_dev(self) -> float:
-        files: list = os.listdir(self.Normal_fall_folder)
-        files.sort(key=lambda x: os.path.getmtime(os.path.join(self.Normal_fall_folder, x)))
-        last_file: str = files[-1]
-        dev_matrix: list = self.downloadFile(f"{self.Normal_fall_folder}/{last_file}")
-        dev_dict: dict = {key: value for key, value in dev_matrix if value != 0.0}
-        min_value: float = min(dev_dict.values())
-        key_for_min_value: float = float(next((key for key, value in dev_dict.items() if value == min_value), None))
-        return key_for_min_value
+def find_coax_zenith(df: pd.DataFrame) -> float:
+    my_df: pd.DataFrame = df
+    dispersion: np.ndarray = my_df['radius dispersion'].to_numpy()
+    min_dev: float = np.min(dispersion)
+    coax_zenith_angle: float = my_df.loc[df['radius dispersion'] == min_dev, 'zenith angle'].iloc[0]
+    return coax_zenith_angle
 
-    def defineAproxPolynom(self, buffer: list)-> list:
-        npbuffer: np.ndarray = np.array(buffer)
-        radius: list = npbuffer[:, self.radiusSensCol]
-        thetta: list = npbuffer[:, self.zenRotatorCol]
-        A: list = np.vstack([radius**i for i in range(self.order_of_polynom + 1)]).T
-        coefficients: list = lsq_linear(A, thetta).x
-        return coefficients
+def define_aprox_coefs(df: pd.DataFrame) -> list:
+    '''Находим коэффициенты апроксимирующего полинома шестой степени из калибровочных данных'''
+    calib_df: pd.DataFrame = df
+    radius: list = calib_df['radius sens'].to_numpy()
+    thetta: list = calib_df['zenith angle'].to_numpy()
+    A: list = np.vstack([radius**i for i in range(order_of_polynom + 1)]).T
+    coefficients: list = lsq_linear(A, thetta).x
+    return coefficients
 
-    def defineZenithDeviation(self, buffer: list) -> tuple:
-        npbuffer: np.ndarray = np.array(buffer)
-        coefs: list = self.defineAproxPolynom(npbuffer)
-        polynomial = np.poly1d(np.flip(coefs))
-        deviationBuff: list = polynomial(npbuffer[:, self.radiusSensCol]) - npbuffer[:, self.zenRotatorCol]
-        angleBuff: list = npbuffer[:, self.zenRotatorCol]
-        return (angleBuff, deviationBuff)
+def define_aprox_polynom(df: pd.DataFrame) -> np.poly1d:
+    '''Находим полином шестой степени по коэффициентам'''
+    calib_df: pd.DataFrame = df
+    calib_coefs: list = define_aprox_coefs(calib_df)
+    calib_polynomial: np.poly1d = np.poly1d(np.flip(calib_coefs))
+    return calib_polynomial
+
+def find_angle_error(df: pd.DataFrame) -> np.ndarray:
+    '''Находим отклонение теоретических данных от экспериментальных'''
+    calib_df: pd.DataFrame = df
+    calib_polynom: np.poly1d = define_aprox_polynom(calib_df)
+    theor_data: np.ndarray = calib_df['radius sens'].to_numpy()
+    exp_dat: np.ndarray = calib_df['zenith angle'].to_numpy()
+    deviation_buff: np.ndarray = calib_polynom(theor_data) - exp_dat
+    return deviation_buff

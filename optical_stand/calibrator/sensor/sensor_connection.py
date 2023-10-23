@@ -9,3 +9,6 @@ def find_comport() -> str | None:
         if device_description in name.description:
             return name.device
     return None
+
+if __name__ == "__main__":
+    print(find_comport())

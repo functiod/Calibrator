@@ -1,28 +1,24 @@
-from optical_stand.calibrator.rotator.rotator_pivot import Pivot
-from optical_stand.calibrator.rotator.rotator_pivot import Axis
+from optical_stand.calibrator.rotator.rotator_device import Device
 
 
-class Settings():
+class Settings(Device):
     "Class for set up the motion settings"
 
-    def __init__(self) -> None:
-        pass
-
     def set_azim_vel(self, velocity: float) -> None:
-        Pivot(Axis.azimuth).set_velocity(velocity)
+        self.device_azimuth.set_velocity(velocity)
 
     def set_zen_vel(self, velocity: float) -> None:
-        Pivot(Axis.zenith).set_velocity(velocity)
+        self.device_zenith.set_velocity(velocity)
 
     def set_azim_acc(self, acceleration: float) -> None:
-        Pivot(Axis.azimuth).set_acceleration(acceleration)
+        self.device_azimuth.set_acceleration(acceleration)
 
     def set_zen_acc(self, acceleration: float) -> None:
-        Pivot(Axis.zenith).set_acceleration(acceleration)
+        self.device_zenith.set_acceleration(acceleration)
 
     def get_dev_coord(self) -> tuple[float, float]:
-        azim_coord: float = Pivot(Axis.azimuth).get_coord()
-        zen_coord: float = Pivot(Axis.zenith).get_coord()
+        azim_coord: float = round(float(self.device_azimuth.get_coord(), 3))
+        zen_coord: float = round(float(self.device_zenith.get_coord(), 3))
         return zen_coord, azim_coord
 
     def define_step_angle(self, step_amount: int, initial_angle: float, end_angle: float, step_number: int) -> float:

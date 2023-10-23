@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import time
+from typing import Any
 from optical_stand.calibrator.acspy_lib import acsc
 from optical_stand.calibrator.acspy_lib.acsc import ACSC_SAFETY_CPE
 
@@ -15,16 +16,17 @@ class Pivot():
     MAX_COORD: float = 360.00
     EPS: float = 0.001
     additional_ip: str = '10.2.1.202'
-    static_ip: str = '10.0.0.100'
-    sleep_time: float = 0.5
+    static_ip: str = '10.0.0.10'
+    additional_ip_2: str = '10.6.1.136'
+    sleep_time: float = 1.0
     default_position: float = 90.0
+    com_port: Any
 
     def __init__(self, axis: Axis) -> None:
         self.axis: Axis = axis
-        self.com_port: any | None = None
 
     def connect_TCP(self, ip: str = additional_ip) -> None:
-        self.com_port = acsc.openCommEthernetTCP(address = ip)
+        self.com_port: Any | None = acsc.openCommEthernetTCP(address = ip)
 
     def initialize(self) -> bool:
         acsc.enable(self.com_port, self.axis.value)
