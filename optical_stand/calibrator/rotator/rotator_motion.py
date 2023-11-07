@@ -1,6 +1,6 @@
 from optical_stand.calibrator.rotator.rotator_device import Device
 from optical_stand.calibrator.rotator.rotator_pivot import Pivot
-from numpy import allclose
+
 
 class DeviceMotion(Device):
     "Class for Device motion controll"

@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from optical_stand.calibrator.data_processing.calc import define_aprox_polynom, find_angle_error
+from optical_stand.calibrator.data_processing.calculation import define_aprox_polynom, find_angle_error
 
 def plot_teor_exp_calib(df: pd.DataFrame) -> None:
-    '''График экспериментальных данных с апроксимирующей кривой'''
+    '''График экспериментальных данных с апроксимирующим полиномом 6 порядка'''
     calib_df: pd.DataFrame = df
     x_min: float = np.min(calib_df['radius sens'].to_numpy())
     x_max: float = np.max(calib_df['radius sens'].to_numpy())
@@ -21,6 +21,7 @@ def plot_teor_exp_calib(df: pd.DataFrame) -> None:
     plt.show()
 
 def plotZenithDeviation(df: pd.DataFrame) -> None:
+    '''График отклонения экспериментального угла от теоретического'''
     calib_df: pd.DataFrame = df
     y_new: np.ndarray = find_angle_error(calib_df)
     y: np.ndarray = calib_df['zenith angle'].to_numpy()
