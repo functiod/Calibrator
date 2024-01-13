@@ -58,3 +58,16 @@ def find_zen_angle_dispersion(df_calib: pd.DataFrame | str) -> np.ndarray:
         zenith_dispersion.append(np.repeat(dispersion, number_azim_steps))
     zenith_dispersion = np.array(zenith_dispersion).flatten()
     return np.array(zenith_dispersion)
+
+# def find_angle_velocity(df_calib: pd.DataFrame | str) -> np.ndarray:
+#     if isinstance(df_calib, pd.DataFrame):
+#         df: pd.DataFrame = df_calib
+#     elif isinstance(df_calib, str):
+#         df: pd.DataFrame = read_calib_from_csv(df_calib)
+#     else:
+#         raise Exception("Wrong DataFrame type")
+#     sensor_coord: np.ndarray = df['sensor angle'].to_numpy()
+#     time_list: np.ndarray = df['time, sec'].to_numpy()
+#     velocity_list: list = []
+#     for i in range(len(time_list))
+

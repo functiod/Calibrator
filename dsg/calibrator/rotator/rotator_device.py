@@ -27,6 +27,9 @@ class Device:
     def get_coord_azim(self) -> float:
         return self.device_azimuth.get_coord()
 
+    def get_vel_zen(self) -> float:
+        return self.device_zenith.get_velocity()
+
 if __name__ == "__main__":
     device: Device = Device()
     device.connect_rotator()

@@ -80,7 +80,7 @@ m_odr = 1
 #открытие порта
 ser = serial.Serial()
 ser.baudrate = 1000000
-ser.port = 'COM7' #COM11 & #COM4
+ser.port = 'COM6' #COM11 & #COM4
 ser.timeout = 5
 ser.open()
 
@@ -93,7 +93,7 @@ def main():
     #setNewSensAddr(lupa300_set, 0xFF, 0x06)
     #getCalibCoeff(lupa300_set)
     # setSettingsMatrix(lupa300_set)
-    setCalibCoeff(calib_coeff, lupa300_set)
+    # setCalibCoeff(calib_coeff, lupa300_set)
     #getCalibCoeff(lupa300_set)
     #testFileName()
     setGamSettings(lupa300_set)
@@ -114,16 +114,16 @@ def main():
         #getMagData(lupa300_set)
         #getGyroAccData(lupa300_set)
         #BroadcastTest(lupa300_set)
-        getMlxPhoto(lupa300_set)
+        # getMlxPhoto(lupa300_set)
         setSettingsMatrix(lupa300_set)
-        saveImageToFile(getImg10bit(lupa300_set, cmd=0x04, v_size=480, h_size=480), lupa300_set)
+        getImg10bit(lupa300_set, cmd=0x04, v_size=480, h_size=480)
         # testSensorCenterAngles()
 
         time.sleep(1)
-        if lupa300_set['addr_rec'] > 5:
-            lupa300_set['addr_rec'] = 1
-        else:
-            lupa300_set['addr_rec'] += 1
+        # if lupa300_set['addr_rec'] > 5:
+        #     lupa300_set['addr_rec'] = 1
+        # else:
+        #     lupa300_set['addr_rec'] += 1
         #lupa300_set['integration_time'] += 10
         #lupa300_set['vcal'] += 10
         #test_center_x += 1

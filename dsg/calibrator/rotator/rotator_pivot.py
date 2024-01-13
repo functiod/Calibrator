@@ -57,6 +57,9 @@ class Pivot():
     def set_acceleration(self, acceleration: float) -> None:
         acsc.setAcceleration(self.com_port, self.axis.value, acceleration)
 
+    def get_velocity(self) -> float:
+        return acsc.getVelocity(self.com_port, self.axis.value)
+
     def __define_to_angle(self, angle: float) -> float:
         coef: int = 0
         if abs(angle) >= self.MAX_COORD and angle >= self.MIN_COORD:

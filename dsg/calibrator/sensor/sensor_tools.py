@@ -83,14 +83,13 @@ class Tools(SunSensor):
             time.sleep(0.1)
             self.read_timeout = 3
             self.flush()
-            time.sleep(1)
             self.write(self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'],
                                 0x00, 0x00, self.take_photo_cmd, 0x08, 0x00,
                                 ss.test_center_x & 0x00FF, ss.test_center_x >> 8,
                                 ss.test_center_y & 0x00FF, ss.test_center_y >> 8,
                                 ss.bg_noise & 0x00FF, ss.bg_noise >> 8,
                                 ss.salt_noise & 0x00FF, ss.salt_noise >> 8, 0x00, 0x00]))
-            time.sleep(1)
+
             rx_buf: bytes = self.read(30)
             if not self._packVerification(ss.lupa300_set, rx_buf):
                 if rx_buf[8:13] != b'ERROR':
@@ -160,9 +159,8 @@ class Tools(SunSensor):
 
 if __name__ == "__main__":
     tool: Tools = Tools()
-    # coefs: list = [-3.53521489e-01, 5.94508141e-01, -3.06034115e-02,  1.64573377e-03, -4.30590485e-05,  5.39317379e-07, -2.58700550e-09]
     coefs: list = [
-        -2.48E-01, 4.10E-01, -3.86E-03, 1.45E-04, -2.97E-06,  2.92E-08, -1.12E-10,
+        -2.1003e-01, 4.1407e-01, -7.7395e-04, 7.9406e-06, -1.0717e-07, 5.4699e-10, -9.8182e-13,
         235.23075, 249.04875, 0.0,
         1.0, 3.0
         ]
