@@ -18,6 +18,7 @@ def define_aprox_coefs(df_calib: pd.DataFrame | str) -> list:
     thetta: list = df['zenith angle'].to_numpy()
     A: list = np.vstack([radius**i for i in range(order_of_polynom + 1)]).T
     coefficients: list = lsq_linear(A, thetta).x
+    coefficients: list = [float('%.4e' % x) for x in coefficients]
     return coefficients
 
 def define_aprox_polynom(df_calib: pd.DataFrame | str) -> np.poly1d:

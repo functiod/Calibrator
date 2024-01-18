@@ -3,9 +3,10 @@ import time
 import struct
 import datetime
 import serial
+import pandas as pd
 import dsg.calibrator.sensor.sensor_settings as ss
 from dsg.calibrator.sensor.sensor_init import SunSensor
-
+from dsg.calibrator.data_processing.after_processing import prepare_calib_buffer
 
 class Tools(SunSensor):
     "Class for low level data processing"
@@ -103,10 +104,12 @@ class Tools(SunSensor):
         self.read_timeout = 0.1
         return result
 
-    def set_calib_coeff(self, coeff_arr: list) -> None:
+    def set_calib_coeff(self, df_intensity: pd.DataFrame | str, df_normal: pd.DataFrame | str) -> None:
         tx_pack: list = [0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0x00, 0x00, 0x0D, 48, 0]
 
-        for element in coeff_arr:
+        coeff_list: list = prepare_calib_buffer(df_intensity, df_normal)
+
+        for element in coeff_list:
             tx_pack += struct.pack('<f', element)
 
         tx_pack += [0, 0]
@@ -159,13 +162,8 @@ class Tools(SunSensor):
 
 if __name__ == "__main__":
     tool: Tools = Tools()
-    coefs: list = [
-        -2.1003e-01, 4.1407e-01, -7.7395e-04, 7.9406e-06, -1.0717e-07, 5.4699e-10, -9.8182e-13,
-        235.23075, 249.04875, 0.0,
-        1.0, 3.0
-        ]
     tool.connect()
     tool._settingsMatrix()
-    tool.set_calib_coeff(coefs)
+    tool.set_calib_coeff()
     tool._settingsMatrix()
     tool.get_calib_coeff()
