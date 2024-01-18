@@ -20,7 +20,7 @@ def save_calib_to_csv(final_buffer: np.ndarray, folder_path: str = r'utils\Inten
 def save_log_to_csv(final_buffer: np.ndarray, folder_path: str = r'utils/Angle_logs') -> None:
     my_buffer: np.ndarray = np.array(final_buffer)
     df: pd.DataFrame = pd.DataFrame(my_buffer, columns=[
-        'sensor angle', 'rotator angle', 'time, sec'
+        'sensor angle', 'rotator angle', 'time, sec', 'initial time, sec'
     ])
     to_file: str = datetime.now().strftime(f"{folder_path}\\%m-%d-%Y_%H-%M-%S_Velocity.csv")
     df.to_csv(to_file, index = False, na_rep = 'nan', sep='\t')

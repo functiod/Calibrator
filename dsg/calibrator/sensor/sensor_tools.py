@@ -4,6 +4,8 @@ import struct
 import datetime
 import serial
 import pandas as pd
+import numpy as np
+from PIL import Image
 import dsg.calibrator.sensor.sensor_settings as ss
 from dsg.calibrator.sensor.sensor_init import SunSensor
 from dsg.calibrator.data_processing.after_processing import prepare_calib_buffer
@@ -159,6 +161,53 @@ class Tools(SunSensor):
         print("voffset =\t\t0x%X" % struct.unpack('<H', rx_pack[78: 80])[0])
         print("ana_in_adc =\t0x%X" % struct.unpack('<H', rx_pack[80: 82])[0])
         print("pga_setting =\t0x%X" % struct.unpack('<H', rx_pack[82: 84])[0])
+
+    def getMlxPhoto(self) -> None:
+        h_size = 32
+        v_size = 24
+
+        # time.sleep(0.1)
+        self.read_timeout = 7
+
+        # запрос фото от ДГ
+        print('IR photo receiving data...')
+        photo = bytearray()
+
+        self.flush()
+        self.write(self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0, 0, 0x13, 0x00, 0x00, 0, 0]))
+
+        temp_buff: bytes = self.read(10)
+        if temp_buff[8] == 0x45 and temp_buff[9] == 0x52: #ER
+            print('ERROR. OM returned HS error.')
+            return
+        else:
+            temp_buff += self.read(v_size * h_size * 4)
+            if self._packVerification(ss.lupa300_set, temp_buff):
+                print('WARNING. Packet is corrupted.')
+                return
+        photo += temp_buff[8:-2]
+        photo = np.frombuffer(photo, dtype='<f')
+        photo.shape = (v_size, h_size)
+
+        # преобразование массива для наглядности
+        up_level = 255
+        min_t = photo.min()
+        max_t = photo.max()
+        photo = (photo - min_t) * up_level / (max_t - min_t)
+
+        print('IR photo has been received.')
+        print("Min temp = %.1f°C" % min_t)
+        print("Max temp = %.1f°C" % max_t)
+
+        #сохранение
+        photo8bit = photo.astype(np.uint8)
+        img: Image = Image.fromarray(photo8bit)
+        time_now: datetime = datetime.datetime.now()
+        filename: str = time_now.strftime("dsg\calibrator\PHOTO\\%Y-%m-%d %H-%M-%S IRphoto ")
+        filename += "RR=%d RS=%d EM=%d RT=%.2f MIN=%.2f MAX=%.2f.png" % \
+                    (ss.ref_rate, ss.resolution, ss.emissivity, ss.reflection_temp/100, min_t, max_t)
+        img.save(filename)
+        print("IR photo saved.")
 
 if __name__ == "__main__":
     tool: Tools = Tools()
