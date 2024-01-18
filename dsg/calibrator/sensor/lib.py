@@ -6,6 +6,7 @@ import datetime
 import struct
 import crcmod               #crcmod
 import math
+import pandas as pd
 from PIL import Image       #pillow-PIL
 from PIL import ImageFont
 from PIL import ImageDraw
@@ -363,6 +364,9 @@ def getMlxPhoto(set):
             print('WARNING. Packet is corrupted.')
             return
     photo += temp_buff[8:-2]
+    to_file: str = datetime.datetime.now().strftime(f"{r'D:\python_projects\Calibrator\dsg\calibrator\PHOTO'}\\%m-%d-%Y_%H-%M-%S_bytes_IR.csv")
+    df = pd.DataFrame({'photo bytes': np.array(photo)})
+    df.to_csv(to_file, index = False, na_rep = 'nan', sep='\t')
     photo = np.frombuffer(photo, dtype='<f')
     photo.shape = (24, 32)
 
@@ -949,9 +953,33 @@ def F_angles(x, y):
     return zenith, azimuth
 
 if __name__ == '__main__':
-    # setSettingsMatrix(lupa300_set)
-    # setGamSettings(lupa300_set)
-    # getMlxPhoto(lupa300_set)
+    setSettingsMatrix(lupa300_set)
+    setGamSettings(lupa300_set)
+    getMlxPhoto(lupa300_set)
     # getPhoto(lupa300_set)
-    main()
-    ser.close()
+    # main()
+    # ser.close()
+    # time.sleep(0.1)
+    # ser.timeout = 1
+    # pac = [0xAA, 0x02, 0xFF, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00, 0x00]
+    # ser.flushInput()  # очистка входного буфера
+    # ser.write(addCrc16(pac))
+    # temp_buff: bytes = ser.read(8)
+
+    # time.sleep(0.1)
+    # ser.timeout = 1
+    # ser.flushInput()
+    # ser.write(addCrc16([0xAA, lupa300_set['addr_rec'], lupa300_set['addr_send'], 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00]))
+    # tmp_buf = ser.read(11)
+
+    # print(tmp_buf)
+    # print(np.frombuffer(tmp_buf, dtype=np.int8), tmp_buf[8])
+    # # if packVerification(lupa300_set, tmp_buf):
+    # #     print("WARNING: Temperature request timeout.")
+    # #     lupa300_set['stm_temperature'] = -128
+    # # else:
+    # #     lupa300_set['stm_temperature'] = tmp_buf[8]
+    # #     print("STM temp = %d°C" % lupa300_set['stm_temperature'])
+
+    # print(temp_buff)
+    # print(np.frombuffer(temp_buff, dtype=np.int8))
