@@ -107,7 +107,7 @@ if __name__ == "__main__":
     rotator.initialize_rotator()
     rotator.set_zen_vel(50.0)
     rotator.set_azim_vel(50.0)
-    # rotator.set_device_zero_position()
+    rotator.set_device_zero_position()
     rotator.connect()
     data_vector_azim: RotatorControl = RotatorControl(4, 0.0, 360.0)
     data_vector_zen: RotatorControl = RotatorControl(5, 213.0, 333.0)

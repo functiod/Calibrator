@@ -46,6 +46,7 @@ class Tools(SunSensor):
                     ss.lupa300_set['voffset'], ss.lupa300_set['pga_setting'] & 0xFF, ss.lupa300_set['pga_setting'] >> 8, 0x00, 0x00]))
         self.write(
             self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'], 0x00, 0x00, 0x0C, 0x01, 0x00, ss.lupa300_set['black_level'], 0, 0]))
+        time.sleep(0.1)
 
     def _addCrc16(self, check_list: list[bytes]) -> str:
         crc16_fun = crcmod.mkCrcFun(0x18005, 0xFFFF)
@@ -80,29 +81,23 @@ class Tools(SunSensor):
         return 0
 
     def getImg10bit(self) -> tuple[float, float, float, float]:
-        while True:
-            self._setGamsettings()
-            self._settingsMatrix()
-            time.sleep(0.1)
-            self.read_timeout = 3
-            self.flush()
-            self.write(self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'],
-                                0x00, 0x00, self.take_photo_cmd, 0x08, 0x00,
-                                ss.test_center_x & 0x00FF, ss.test_center_x >> 8,
-                                ss.test_center_y & 0x00FF, ss.test_center_y >> 8,
-                                ss.bg_noise & 0x00FF, ss.bg_noise >> 8,
-                                ss.salt_noise & 0x00FF, ss.salt_noise >> 8, 0x00, 0x00]))
+        self.read_timeout = 3
+        self.flush()
+        self.write(self._addCrc16([0xAA, ss.lupa300_set['addr_rec'], ss.lupa300_set['addr_send'],
+                            0x00, 0x00, self.take_photo_cmd, 0x08, 0x00,
+                            ss.test_center_x & 0x00FF, ss.test_center_x >> 8,
+                            ss.test_center_y & 0x00FF, ss.test_center_y >> 8,
+                            ss.bg_noise & 0x00FF, ss.bg_noise >> 8,
+                            ss.salt_noise & 0x00FF, ss.salt_noise >> 8, 0x00, 0x00]))
 
-            rx_buf: bytes = self.read(30)
-            if not self._packVerification(ss.lupa300_set, rx_buf):
-                if rx_buf[8:13] != b'ERROR':
-                    x_sens = struct.unpack(   '<f', rx_buf[8:12])[0]
-                    y_sens = struct.unpack(   '<f', rx_buf[12:16])[0]
-                    zen_sens = struct.unpack( '<f', rx_buf[16:20])[0]
-                    azim_sens = struct.unpack('<f', rx_buf[20:24])[0]
-                    result: tuple = (x_sens, y_sens, zen_sens, azim_sens)
-                    if x_sens != 0.0 and y_sens != 0.0:
-                        break
+        rx_buf: bytes = self.read(30)
+        if not self._packVerification(ss.lupa300_set, rx_buf):
+            if rx_buf[8:13] != b'ERROR':
+                x_sens = struct.unpack(   '<f', rx_buf[8:12])[0]
+                y_sens = struct.unpack(   '<f', rx_buf[12:16])[0]
+                zen_sens = struct.unpack( '<f', rx_buf[16:20])[0]
+                azim_sens = struct.unpack('<f', rx_buf[20:24])[0]
+                result: tuple = (x_sens, y_sens, zen_sens, azim_sens)
         self.read_timeout = 0.1
         return result
 

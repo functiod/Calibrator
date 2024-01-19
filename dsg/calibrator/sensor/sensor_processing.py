@@ -13,15 +13,16 @@ class Processing(Tools):
 
     def get_centre_coords(self) -> tuple[float, float, float, float]:
         self.set_settings()
-        while True:
-            try:
-                image: tuple[float, float, float, float] = self.getImg10bit()
-                if isinstance(image, tuple):
-                    break
-            except UnboundLocalError:
-                image: tuple[float, float, float, float] = self.getImg10bit()
-                if isinstance(image, tuple):
-                    break
+        # while True:
+        #     try:
+        #         image: tuple[float, float, float, float] = self.getImg10bit()
+        #         if isinstance(image, tuple):
+        #             break
+        #     except UnboundLocalError:
+        #         image: tuple[float, float, float, float] = self.getImg10bit()
+        #         if isinstance(image, tuple):
+        #             break
+        image: tuple[float, float, float, float] = self.getImg10bit()
         image_list: list[float, float, float, float] = [round(float(image[i]), 4) for i in range(len(image))]
         return image_list
 
